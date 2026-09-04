@@ -40,6 +40,11 @@ class Settings(BaseSettings):
             host = self.database_host.strip()
             name = self.database_name.strip()
             self.database_url = f"postgresql+psycopg://{user}:{password}@{host}:{self.database_port}/{name}"
+        elif self.database_url.startswith(("postgres://", "postgresql://")):
+            # URLs in Vercel/Neon commonly omit the SQLAlchemy driver name.
+            # Force psycopg v3; psycopg2 is intentionally not a dependency.
+            scheme, remainder = self.database_url.split("://", 1)
+            self.database_url = f"postgresql+psycopg://{remainder}"
         if not self.cpf_encryption_key:
             if not self.database_password:
                 raise ValueError("CPF_ENCRYPTION_KEY é obrigatória quando não há DATABASE_PASSWORD")

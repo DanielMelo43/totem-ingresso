@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from .config import get_settings
 from .database import SessionLocal, get_db
+from .base import Base
 from .errors import AppError, install_error_handlers
 from .models import Order, OrderItem, OrderStatus, Product, SeatReservation, ServiceCircuit, Showtime, ShowtimeSeat, TicketType
 from .schemas import OrderCreate, OrderOut, PaymentIn, ProductOut, ReservationCreate, ReservationOut, SeatOut, ShowtimeOut, TicketTypeOut
@@ -34,6 +35,10 @@ async def lifespan(_: FastAPI):
     with SessionLocal() as db:
         if settings.database_url.startswith("postgresql"):
             db.execute(text("SELECT pg_advisory_xact_lock(847291)"))
+        # A new managed database has no local Docker volume.  create_all is
+        # idempotent and makes the first serverless cold start self-contained;
+        # Alembic remains available for subsequent schema changes.
+        Base.metadata.create_all(bind=db.get_bind())
         seed_database(db)
     yield
 
