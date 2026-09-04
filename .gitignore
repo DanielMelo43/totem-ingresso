@@ -9,3 +9,5 @@ frontend/dist/
 *.db
 *.tsbuildinfo
 .build-check/
+**/.agents/
+**/skills-lock.json
