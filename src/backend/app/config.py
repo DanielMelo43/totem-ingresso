@@ -21,11 +21,6 @@ class Settings(BaseSettings):
     reservation_minutes: int = 10
     idempotency_ttl_hours: int = 24
     operation_lock_seconds: int = 30
-    request_timeout_seconds: float = 15.0
-    max_request_bytes: int = 65536
-    payment_timeout_seconds: float = 5.0
-    circuit_failure_threshold: int = 3
-    circuit_recovery_seconds: int = 30
     log_level: str = "INFO"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

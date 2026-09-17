@@ -4,10 +4,10 @@ Protótipo funcional touch-first para um totem de autoatendimento de cinema. O f
 
 ## Executar
 
-Requer Node.js 20 ou superior.
+Requer Node.js 20 ou superior. Execute os comandos a partir de `src/frontend`.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -22,7 +22,7 @@ Abra o endereço exibido pelo Vite. Para uso em totem, inicie o Chromium com `--
 
 ## Configuração
 
-Copie `.env.example` para `.env`. A API FastAPI deve estar disponível em `http://localhost:8000`.
+Se necessário, configure `VITE_API_URL=http://localhost:8000` em `.env.local`. A API FastAPI deve estar disponível em `http://localhost:8000`.
 Ao selecionar um assento, o frontend cria imediatamente uma reserva no servidor e atualiza a
 disponibilidade a cada 3 segundos. A reserva é convertida em pedido no pagamento ou liberada no
 cancelamento e na expiração por inatividade.
@@ -38,11 +38,11 @@ cancelamento e na expiração por inatividade.
 
 ## Segurança
 
-- O frontend restringe e valida os formatos aceitos, usa a renderização escapada do React e não injeta HTML recebido de usuários.
-- `src/security.ts` fornece um cliente HTTP com JSON, timeout, caminhos restritos e mensagens públicas genéricas. Respostas técnicas são registradas somente no ambiente de desenvolvimento.
-- Uma barreira global impede que stack traces e detalhes internos apareçam na tela do totem.
-- O servidor Vite de desenvolvimento/preview envia CSP e cabeçalhos contra framing, MIME sniffing, vazamento de referência e acesso indevido a dispositivos. O servidor de produção deve replicar esses cabeçalhos.
-- Prepared statements, validação definitiva, logs protegidos e rate limiting por IP/dispositivo devem obrigatoriamente ser implementados na API. Restrições no navegador são apenas uma camada complementar e não protegem o banco de dados sozinhas.
+- Limites de caracteres, campos obrigatórios, máscara de CPF e inputs tipados.
+- Identificação validada tanto pelo teclado virtual quanto pela entrada física.
+- `src/security.ts` contém o cliente HTTP e preserva as chaves de idempotência para evitar compras duplicadas.
+- Os controles adicionais de cabeçalhos HTTP, filtro de caminhos e timeouts customizados foram removidos.
+- O escopo completo e os controles de integridade e confidencialidade mantidos estão em [SECURITY.md](SECURITY.md).
 
 ## Estrutura
 

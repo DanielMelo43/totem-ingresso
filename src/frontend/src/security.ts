@@ -13,13 +13,9 @@ export class PublicApiError extends Error {
 
 /** Cliente da API FastAPI: envia JSON e nunca repassa detalhes técnicos à interface. */
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-  if (!/^\/[a-z0-9/_?=&.-]*$/i.test(path)) throw new PublicApiError()
-  const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 10_000)
   try {
     const response = await fetch(`${API_URL}${path}`, {
       ...options,
-      signal: controller.signal,
       credentials: 'same-origin',
       headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...options.headers },
     })
@@ -31,8 +27,6 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   } catch (error) {
     if (import.meta.env.DEV) console.error('Falha na API:', error)
     throw error instanceof PublicApiError ? error : new PublicApiError()
-  } finally {
-    window.clearTimeout(timeout)
   }
 }
 
@@ -57,14 +51,3 @@ export async function apiMutation<T>(path:string, body:unknown, key:string=crypt
   }
 }
 
-/** Complemento de UX; o rate limit real deve ser aplicado por IP/dispositivo no backend. */
-export function createAttemptLimiter(limit = 10, windowMs = 60_000) {
-  const attempts: number[] = []
-  return () => {
-    const now = Date.now()
-    while (attempts.length && attempts[0] <= now - windowMs) attempts.shift()
-    if (attempts.length >= limit) return false
-    attempts.push(now)
-    return true
-  }
-}

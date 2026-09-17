@@ -23,7 +23,7 @@ services:
 
   backend:
     build:
-      context: ./backend
+      context: ./src/backend
     restart: unless-stopped
     init: true
     environment:
@@ -51,7 +51,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./src/frontend
       args:
         VITE_API_URL: ""
     restart: unless-stopped

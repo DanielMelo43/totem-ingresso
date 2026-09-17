@@ -3,20 +3,20 @@
 Backend FastAPI para catálogo, disponibilidade de assentos, reserva, pedido e pagamento simulado.
 
 O backend aplica consultas parametrizadas pelo SQLAlchemy, validação independente do frontend,
-idempotência persistida, rate limiting por IP e dispositivo, locks com TTL, transações e respostas
+idempotência persistida, locks de operações com TTL, transações e respostas
 de erro padronizadas com `traceId`.
 
 ## Executar
 
-No PowerShell, a partir de `backend`:
+No PowerShell, a partir de `src/backend`:
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
-Copy-Item .env.example .env
-alembic upgrade head
-python run.py
+.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+# Copie apenas se ainda não houver .env e ajuste a conexão antes das migrações.
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+.venv\Scripts\python.exe -m alembic upgrade head
+.venv\Scripts\python.exe run.py
 ```
 
 A API estará em `http://localhost:8000`, com documentação interativa em `http://localhost:8000/docs`.
@@ -94,8 +94,8 @@ Erros seguem um único contrato seguro:
 }
 ```
 
-Os limites, timeouts, origens CORS e TTLs podem ser alterados no `.env`. Os registros de
-idempotência, rate limit, locks e circuit breaker são persistidos no PostgreSQL e compartilhados
-pelas instâncias.
+As origens CORS e os prazos de reserva podem ser alterados no `.env`.
+A idempotência e os bloqueios de pagamento preservam a integridade das compras.
+Não há limitação de requisições nem circuit breaker no pagamento simulado.
 
 Configure o frontend com `VITE_API_URL=http://localhost:8000`.

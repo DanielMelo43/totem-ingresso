@@ -14,9 +14,9 @@ from .config import get_settings
 from .database import SessionLocal, get_db
 from .base import Base
 from .errors import AppError, install_error_handlers
-from .models import Order, OrderItem, OrderStatus, Product, SeatReservation, ServiceCircuit, Showtime, ShowtimeSeat, TicketType
+from .models import Order, OrderItem, OrderStatus, Product, SeatReservation, Showtime, ShowtimeSeat, TicketType
 from .schemas import OrderCreate, OrderOut, PaymentIn, ProductOut, ReservationCreate, ReservationOut, SeatOut, ShowtimeOut, TicketTypeOut
-from .security import abandon_idempotency, acquire_lock, begin_idempotency, complete_idempotency, release_lock, security_middleware
+from .security import abandon_idempotency, acquire_lock, begin_idempotency, complete_idempotency, release_lock
 from .seed import seed_database
 from .services.payment import payment_gateway
 from .services.customer_data import protect_customer
@@ -45,7 +45,6 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title=settings.app_name, version="1.0.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=settings.origins, allow_credentials=True, allow_methods=["GET", "POST"], allow_headers=["Content-Type", "Idempotency-Key", "X-Device-ID", "X-Trace-ID"])
-app.middleware("http")(security_middleware)
 app.state.session_factory = SessionLocal
 install_error_handlers(app)
 
@@ -84,9 +83,7 @@ def health(db: Session = Depends(get_db)):
         database = "up"
     except Exception:
         database = "down"
-    circuit = db.get(ServiceCircuit, payment_gateway.service_name) if database == "up" else None
-    gateway = "up" if not circuit or circuit.state != "open" else "degraded"
-    result = {"status": "ok" if database == "up" else "unavailable", "dependencies": {"database": database, "payment_gateway": gateway}}
+    result = {"status": "ok" if database == "up" else "unavailable", "dependencies": {"database": database, "payment_gateway": "up"}}
     if database != "up":
         raise AppError(503, "SERVICO_INDISPONIVEL", "Serviço temporariamente indisponível.")
     return result
