@@ -1,1 +1,10 @@
--r src/backend/requirements.txt
+# Keep these versions aligned with src/backend/requirements.txt.
+# Vercel needs the dependencies listed directly in this root manifest.
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+SQLAlchemy==2.0.43
+alembic==1.17.1
+psycopg[binary]==3.2.10
+pydantic-settings==2.10.1
+email-validator==2.2.0
+cryptography==46.0.3
