@@ -17,7 +17,7 @@ from .errors import AppError, install_error_handlers
 from .models import Order, OrderItem, OrderStatus, Product, SeatReservation, Showtime, ShowtimeSeat, TicketType
 from .schemas import OrderCreate, OrderOut, PaymentIn, ProductOut, ReservationCreate, ReservationOut, SeatOut, ShowtimeOut, TicketTypeOut
 from .security import abandon_idempotency, acquire_lock, begin_idempotency, complete_idempotency, release_lock
-from .seed import seed_database
+from .seed import ensure_upcoming_showtimes, seed_database
 from .services.payment import payment_gateway
 from .services.customer_data import protect_customer
 
@@ -91,6 +91,9 @@ def health(db: Session = Depends(get_db)):
 
 @app.get("/api/v1/showtimes", response_model=list[ShowtimeOut], tags=["catalog"])
 def list_showtimes(on: date = Query(default_factory=date.today), db: Session = Depends(get_db)):
+    # Warm serverless instances also need a refreshed schedule after midnight.
+    if date.today() <= on < date.today() + timedelta(days=5):
+        ensure_upcoming_showtimes(db)
     start = datetime.combine(on, datetime.min.time())
     end = start + timedelta(days=1)
     return db.scalars(select(Showtime).options(joinedload(Showtime.movie)).where(Showtime.starts_at >= start, Showtime.starts_at < end).order_by(Showtime.starts_at)).all()

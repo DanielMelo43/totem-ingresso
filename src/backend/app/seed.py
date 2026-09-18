@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from .models import Movie, Product, Showtime, ShowtimeSeat, TicketType
@@ -15,8 +15,38 @@ MOVIES = [
 ]
 
 
+def ensure_upcoming_showtimes(db: Session) -> None:
+    """Extend the demo schedule without changing existing sessions or seats."""
+    if db.get_bind().dialect.name == "postgresql":
+        db.execute(text("SELECT pg_advisory_xact_lock(847291)"))
+    today = date.today()
+    start = datetime.combine(today, time.min)
+    end = start + timedelta(days=5)
+    movie_ids = set(db.scalars(select(Movie.id)).all())
+    existing = set(db.scalars(select(Showtime.id).where(
+        Showtime.starts_at >= start, Showtime.starts_at < end,
+    )).all())
+    for movie_id, *_, hours in MOVIES:
+        if movie_id not in movie_ids:
+            continue
+        for offset in range(5):
+            session_date = today + timedelta(days=offset)
+            for hour in hours:
+                showtime_id = f"{movie_id}-{session_date:%Y%m%d}-{hour.replace(':', '')}"
+                if showtime_id in existing:
+                    continue
+                db.add(Showtime(id=showtime_id, movie_id=movie_id,
+                               starts_at=datetime.combine(session_date, time.fromisoformat(hour)), room="04"))
+                for row in "ABCDEFGH":
+                    for number in range(1, 11):
+                        db.add(ShowtimeSeat(showtime_id=showtime_id, code=f"{row}{number}",
+                                            accessible=row == "H" and number in (1, 10)))
+    db.commit()
+
+
 def seed_database(db: Session) -> None:
     if db.scalar(select(Movie.id).limit(1)):
+        ensure_upcoming_showtimes(db)
         return
     for movie_id, title, genre, duration, rating, language, fmt, color, hours in MOVIES:
         db.add(Movie(id=movie_id, title=title, genre=genre, duration_minutes=duration, rating=rating, language=language, format=fmt, color=color))
@@ -44,4 +74,3 @@ def seed_database(db: Session) -> None:
     ]
     db.add_all([Product(id=i, name=n, description=d, price=Decimal(p), category=c, icon=icon) for i, n, d, p, c, icon in products])
     db.commit()
-
