@@ -44,35 +44,38 @@ reinicializações.
 
 ## Publicar na Vercel
 
-Este monorepo deve ser cadastrado como dois projetos na Vercel:
+O `vercel.json` na raiz publica frontend e backend em um unico projeto.
+O PostgreSQL continua no Neon ou em outro provedor externo.
 
-- frontend: diretório raiz `src/frontend`, framework Vite;
-- backend: diretório raiz `src/backend`, framework detectado automaticamente como FastAPI.
-
-O PostgreSQL do Docker é apenas local. Em produção, vincule ao projeto do backend um PostgreSQL
-gerenciado (por exemplo, Neon pela Vercel Marketplace) e configure estas variáveis:
+1. Envie os arquivos para o GitHub e importe o repositorio na Vercel.
+2. Deixe **Root Directory** na raiz (`./`).
+3. Selecione **Framework Preset: Other**. O arquivo define os comandos de
+   install/build e a pasta de saida automaticamente.
+4. Cadastre as variaveis abaixo e clique em **Deploy**:
 
 ```text
 DATABASE_URL=postgresql+psycopg://usuario:senha@host/banco?sslmode=require
-CPF_ENCRYPTION_KEY=<chave-Fernet-independente-e-secreta>
-FRONTEND_ORIGINS=https://<projeto-frontend>.vercel.app
+CPF_ENCRYPTION_KEY=<sua-chave-Fernet-secreta>
 ```
 
-No projeto do frontend, configure antes do build:
-
-```text
-VITE_API_URL=https://<projeto-backend>.vercel.app
-```
-
-Antes do primeiro deploy do backend (e sempre que houver uma nova migration), execute a partir de
-`src/backend` com as variáveis de produção carregadas:
+Ao reutilizar o banco, preserve a mesma CPF_ENCRYPTION_KEY para conseguir ler
+os CPFs existentes. Nunca salve essas credenciais no Git.
+Para um banco novo, gere uma chave com Python e cryptography instalados:
 
 ```powershell
-python scripts/migrate.py
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 ```
 
-Não reutilize a senha do banco como `CPF_ENCRYPTION_KEY` em produção e mantenha essa chave fora do
-Git. A perda da chave impede a leitura dos CPFs já criptografados.
+Deixe **VITE_API_URL ausente** no projeto unificado. Remova qualquer valor antigo
+antes do build para que o frontend use a API no mesmo dominio.
+FRONTEND_ORIGINS so precisa ser configurada para acesso por outro dominio.
+
+Depois do deploy, confira `/`, `/health` e `/docs` no dominio gerado.
+Para aplicar migrations a um banco existente, execute em `src/backend`, com
+as variaveis do banco correto carregadas: `python scripts/migrate.py`.
+
+Os arquivos Vercel dentro de `src/frontend` e `src/backend` continuam disponiveis
+para deploys separados. O deploy unificado usa o arquivo da raiz.
 
 ## Organização
 
@@ -158,6 +161,5 @@ docker compose config --quiet
 docker compose build
 ```
 
-Nos projetos Vercel já existentes, ajuste o campo Root Directory para
-`src/backend` e `src/frontend`, respectivamente. Essa configuração externa não é
-alterada pelos arquivos locais; nenhum deploy é necessário para revisar a estrutura.
+Para publicar tudo em um projeto Vercel existente, ajuste Root Directory para
+`./` e Framework Preset para Other. Os arquivos locais nao alteram o painel.

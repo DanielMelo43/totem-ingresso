@@ -1,0 +1,9 @@
+**/.env
+**/.env.*
+**/.venv/**
+**/node_modules/**
+**/__pycache__/**
+**/.pytest_cache/**
+**/.vercel/**
+src/frontend/dist/**
+.build-check/**
